@@ -1,6 +1,8 @@
 import { Play } from "phosphor-react";
 import { CountdownContainer, FormContainer, HomeContainer, MinutesAmountInput, Separator, StartCoutdownButton, TaskInput } from "./styles";
 import { useForm } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as zod from 'zod'
 
 /**
  * function register(name: string){
@@ -12,15 +14,39 @@ import { useForm } from 'react-hook-form';
  * }
  */
 
-export function Home(){
-    const { register, handleSubmit, watch } = useForm()
+const newCycleFormValidationSchema = zod.object({
+    task: zod.string().min(1, 'Informe a tarefa'),
+    minutesAmount: zod
+    .number()
+    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos')
+    .max(60, 'O ciclo precisa ser de no máximo 60 minutos'),
+})
 
-    function handleCreateNewCycle(data: any){
+
+// Uma outra forma de referenciar a tipagem do meu formulário, é usando 
+// as próprias tipagens que a biblioteca zod extrai em: "newCycleFormValidationSchema".
+// Para isso eu uso o "type" extraindo uma outra referência e seus respectivos campos.
+
+// Usando o typeof eu permito com que meu código TypeScript entenda
+// uma variável JavaScript
+type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
+
+export function Home(){
+    const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
+        resolver: zodResolver(newCycleFormValidationSchema), 
+        defaultValues: {
+            task: '',
+            minutesAmount: 0,
+        }
+    })
+
+    function handleCreateNewCycle(data: NewCycleFormData){
         console.log(data)
+        reset();
     }
 
     const task = watch('task')
-    const isSubmitDisabled = !task
+    const isSubmitDisabled = !task;
 
     return(
         <HomeContainer>
@@ -62,7 +88,7 @@ export function Home(){
                     <span>0</span>
                 </CountdownContainer>
 
-                <StartCoutdownButton disabled={!task} type="submit">
+                <StartCoutdownButton disabled={isSubmitDisabled} type="submit">
                     <Play size={24}/>
                     Começar
                 </StartCoutdownButton>
